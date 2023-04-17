@@ -1,0 +1,14 @@
+.container {
+  width: 800px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.innerContainer {
+  display: flex;
+  gap: 4px;
+}
+
+.input {
+  width: 600px;
+}

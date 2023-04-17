@@ -1,19 +1,25 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CuesList } from "./components/CuesList/CuesList";
 
 function App() {
   const trackRef = useRef({});
   const videoRef = useRef();
   const [activeCue, setActiveCue] = useState("");
+  const [cues, setCues] = useState([]);
 
   useEffect(() => {
-    const track = trackRef.current;
+    const { track } = trackRef.current;
+
+    setTimeout(() => {
+      setCues(Array.from(track.cues));
+    }, 80);
 
     track.addEventListener("cuechange", onCueChange);
 
     return () => {
       track.removeEventListener("cuechange", onCueChange);
     };
-  }, []);
+  }, [trackRef]);
 
   const addCaption = () => {
     const cue = new VTTCue(8, 12, "this is a test");
@@ -39,7 +45,7 @@ function App() {
     <main style={{ display: "flex", flexDirection: "column" }}>
       <video id="video" controls width={900} ref={videoRef}>
         <source src="https://wsc-sports.video/k3y9" type="video/mp4" />
-        
+
         <track
           default
           kind="subtitles"
@@ -65,6 +71,8 @@ function App() {
       <div>
         <p>Current text: {activeCue}</p>
       </div>
+
+      <CuesList cues={cues} track={trackRef.current.track} />
     </main>
   );
 }
