@@ -1,7 +1,8 @@
 import { useState } from "react";
 import styles from "./CueItem.module.css";
+import { formatVttTime } from "../../utils/formatVttTime";
 
-export const CueItem = ({ cue, removeCue }) => {
+export const CueItem = ({ cue, removeCue, updateCueText }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(cue.text);
 
@@ -18,14 +19,15 @@ export const CueItem = ({ cue, removeCue }) => {
   };
 
   const onSave = () => {
-    cue.text = text;
+    updateCueText(cue.id, text);
     setIsEditing(false);
   };
 
   return (
     <div className={styles.container}>
       <div className={styles.innerContainer}>
-        <div>{cue.id}</div>|<div>{cue.startTime}</div>|<div>{cue.endTime}</div>|
+        <div>{cue.id}</div>|<div>{formatVttTime(cue.startTime)}</div>|
+        <div>{formatVttTime(cue.endTime)}</div>|
         {isEditing ? (
           <input
             value={text}
@@ -48,7 +50,7 @@ export const CueItem = ({ cue, removeCue }) => {
             Edit
           </button>
         )}
-        <button onClick={removeCue}>Delete</button>
+        <button onClick={removeCue(cue.id)}>Delete</button>
       </div>
     </div>
   );

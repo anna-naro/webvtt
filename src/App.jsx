@@ -1,18 +1,35 @@
 import { useEffect, useRef, useState } from "react";
 import { CuesList } from "./components/CuesList/CuesList";
+import { WebVTTParser, WebVTTSerializer } from "webvtt-parser";
+import { AddCueForm } from "./components/AddCueForm/AddCueForm";
+import { CustomVTTCue } from "./utils/CustomVTTCue";
+
+//https://brenopolanski.github.io/html5-video-webvtt-example/MIB2-subtitles-pt-BR.vtt
+const vttSerializer = new WebVTTSerializer();
+const vttParser = new WebVTTParser();
 
 function App() {
   const trackRef = useRef({});
   const videoRef = useRef();
   const [activeCue, setActiveCue] = useState("");
   const [cues, setCues] = useState([]);
+  const [vttSrc, setVttSrc] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      const vttTree = vttParser.parse(
+        await fetch("subtitles.vtt").then((res) => res.text()),
+        "metadata"
+      );
+
+      setCues(vttTree.cues);
+    }
+
+    load();
+  }, []);
 
   useEffect(() => {
     const { track } = trackRef.current;
-
-    setTimeout(() => {
-      setCues(Array.from(track.cues));
-    }, 80);
 
     track.addEventListener("cuechange", onCueChange);
 
@@ -20,6 +37,19 @@ function App() {
       track.removeEventListener("cuechange", onCueChange);
     };
   }, [trackRef]);
+
+  useEffect(() => {
+    if (!cues.length) return;
+
+    console.log(cues);
+
+    const blob = new Blob([vttSerializer.serialize(cues)], {
+      type: "text/plain",
+    });
+    const trackSrc = URL.createObjectURL(blob);
+
+    setVttSrc(trackSrc);
+  }, [cues]);
 
   const addCaption = () => {
     const cue = new VTTCue(8, 12, "this is a test");
@@ -41,15 +71,39 @@ function App() {
     setActiveCue(activeCues[0]?.text || "");
   };
 
+  const removeCue = (id) => () => {
+    setCues((prevState) => prevState.filter((cue) => cue.id !== id));
+  };
+
+  const updateCueText = (id, newText) => {
+    setCues((prevState) => {
+      const index = prevState.findIndex((cue) => cue.id === id);
+
+      const newState = [...prevState];
+      newState[index].text = newText;
+      newState[index].tree.children[0].value = newText;
+
+      return newState;
+    });
+  };
+
+  const addCue = (options) => {
+    setCues((prevState) => [
+      ...prevState,
+      new CustomVTTCue({ ...options, id: prevState.length + 1 }),
+    ]);
+  };
+
   return (
     <main style={{ display: "flex", flexDirection: "column" }}>
-      <video id="video" controls width={900} ref={videoRef}>
+      <video muted id="video" controls width={900} ref={videoRef}>
         <source src="https://wsc-sports.video/k3y9" type="video/mp4" />
 
         <track
           default
           kind="subtitles"
-          src="subtitles.vtt"
+          // src="subtitles.vtt"
+          src={vttSrc}
           srcLang="en"
           label="Subtitles"
           ref={trackRef}
@@ -72,7 +126,13 @@ function App() {
         <p>Current text: {activeCue}</p>
       </div>
 
-      <CuesList cues={cues} track={trackRef.current.track} />
+      <AddCueForm addCue={addCue} />
+      <CuesList
+        cues={cues}
+        track={trackRef.current.track}
+        removeCue={removeCue}
+        updateCueText={updateCueText}
+      />
     </main>
   );
 }
