@@ -20,14 +20,14 @@ function App() {
 
   const initializeHls = useCallback(() => {
     var hls = new Hls();
-    
-    hls.loadSource('http://localhost:3000/closeCaptionsMedia/silence.m3u8');
-    
+
+    hls.loadSource("http://localhost:3000/closeCaptionsMedia/silence.m3u8");
+
     hls.attachMedia(audioRef.current);
-    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+    hls.on(Hls.Events.MANIFEST_PARSED, function () {
       audioRef.current.play();
     });
-  }, [audioRef])
+  }, [audioRef]);
 
   useEffect(() => {
     async function load() {
@@ -36,7 +36,7 @@ function App() {
         "metadata"
       );
 
-      console.log('vttTree.cues',vttTree.cues);
+      console.log("vttTree.cues", vttTree.cues);
 
       setCues(vttTree.cues);
     }
@@ -71,13 +71,23 @@ function App() {
 
   const addCaption = () => {
     setCues((prevCues) => {
-      const newCustomCue = new CustomVTTCue({id: prevCues.length + 1, startTime: 8, endTime: 12, text:"this is a test"});
-      const newCue = new VTTCue(newCustomCue.startTime, newCustomCue.endTime, newCustomCue.text);
+      const newCustomCue = new CustomVTTCue({
+        id: prevCues.length + 1,
+        startTime: 8,
+        endTime: 12,
+        text: "this is a test",
+      });
+      const newCue = new VTTCue(
+        newCustomCue.startTime,
+        newCustomCue.endTime,
+        newCustomCue.text
+      );
 
       newCue.id = newCustomCue.id;
       trackRef.current.track.addCue(newCue);
 
-      return [...prevCues, newCustomCue]});
+      return [...prevCues, newCustomCue];
+    });
   };
 
   const deleteCaption = () => {
@@ -87,24 +97,24 @@ function App() {
   };
 
   const updateCaption = () => {
-    const newText = 'my name is anna'
-    
+    const newText = "my name is anna";
+
     const cue = trackRef.current.track.cues[0];
     cue.text = newText;
 
     setCues((prevCues) => {
       prevCues[0].text = newText;
-      
+
       return [...prevCues];
-    })
+    });
   };
 
   const toggleCaptionPosition = () => {
     const cue = trackRef.current.track.cues[0];
 
-    if(cue.line === 'auto') cue.line = -1;
-    
-    if(cue.line === 0) cue.line = -1;
+    if (cue.line === "auto") cue.line = -1;
+
+    if (cue.line === 0) cue.line = -1;
     else cue.line = 0;
   };
 
@@ -116,9 +126,9 @@ function App() {
         audioRef.current.style.width = `${video.width * 0.6}px`;
         audioRef.current.style.height = `calc(${audioRef.current.style.width}  * 9/16)`;
         break;
-        
-        case "9:16":
-          audioRef.current.style.height = `${video.height * 0.6}px`;
+
+      case "9:16":
+        audioRef.current.style.height = `${video.height * 0.6}px`;
         audioRef.current.style.width = `calc(${audioRef.current.style.height} * 9/16)`;
         break;
 
@@ -128,7 +138,7 @@ function App() {
         break;
     }
 
-    audioRef.current.style.margin = `calc((${video.height}px - ${audioRef.current.style.height}) / 2) calc((${video.width}px - ${audioRef.current.style.width}) / 2)`
+    audioRef.current.style.margin = `calc((${video.height}px - ${audioRef.current.style.height}) / 2) calc((${video.width}px - ${audioRef.current.style.width}) / 2)`;
   };
 
   const onCueChange = () => {
@@ -158,15 +168,22 @@ function App() {
       new CustomVTTCue({ ...options, id: prevState.length + 1 }),
     ]);
   };
-     
-return (
-    <main style={{ display: "flex", flexDirection: "column", position: 'relative', }}>
+
+  return (
+    <main
+      style={{ display: "flex", flexDirection: "column", position: "relative" }}
+    >
       <video width={900} ref={videoRef}>
         <source src="https://wsc-sports.video/dyvh"></source>
       </video>
 
-      <div style={{position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
-        <video muted id="video" ref={audioRef} style={{width: 900, height: 506.25, border: '2px solid red'}}>
+      <div style={{ position: "absolute", top: 0, left: 0, zIndex: 1 }}>
+        <video
+          muted
+          id="video"
+          ref={audioRef}
+          style={{ width: 900, height: 506.25, border: "2px solid red" }}
+        >
           <track
             default
             kind="captions"
@@ -197,7 +214,7 @@ return (
 
       <button onClick={() => changeSize("16:9")}>16:9</button>
       <button onClick={() => changeSize("9:16")}>9:16</button>
-      <button onClick={() => changeSize('')}>None</button>
+      <button onClick={() => changeSize("")}>None</button>
 
       <div>
         <p>Current text: {activeCue}</p>
