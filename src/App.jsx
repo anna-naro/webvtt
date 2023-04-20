@@ -36,6 +36,8 @@ function App() {
         "metadata"
       );
 
+      console.log('vttTree.cues',vttTree.cues);
+
       setCues(vttTree.cues);
     }
 
@@ -68,18 +70,33 @@ function App() {
   }, [cues]);
 
   const addCaption = () => {
-    const cue = new VTTCue(8, 12, "this is a test");
-    trackRef.current.track.addCue(cue);
+    setCues((prevCues) => {
+      const newCustomCue = new CustomVTTCue({id: prevCues.length + 1, startTime: 8, endTime: 12, text:"this is a test"});
+      const newCue = new VTTCue(newCustomCue.startTime, newCustomCue.endTime, newCustomCue.text);
+
+      newCue.id = newCustomCue.id;
+      trackRef.current.track.addCue(newCue);
+
+      return [...prevCues, newCustomCue]});
   };
 
   const deleteCaption = () => {
-    const cue = trackRef.current.track.cues[1];
-    trackRef.current.track.removeCue(cue);
+    const removedCue = trackRef.current.track.cues[1];
+    trackRef.current.track.removeCue(removedCue);
+    setCues((prevState) => prevState.filter((cue) => cue.id !== removedCue.id));
   };
 
   const updateCaption = () => {
+    const newText = 'my name is anna'
+    
     const cue = trackRef.current.track.cues[0];
-    cue.text = "my name is anna";
+    cue.text = newText;
+
+    setCues((prevCues) => {
+      prevCues[0].text = newText;
+      
+      return [...prevCues];
+    })
   };
 
   const toggleCaptionPosition = () => {
