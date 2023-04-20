@@ -11,7 +11,9 @@ const vttParser = new WebVTTParser();
 
 function App() {
   const trackRef = useRef({});
+  const audioRef = useRef();
   const videoRef = useRef();
+
   const [activeCue, setActiveCue] = useState("");
   const [cues, setCues] = useState([]);
   const [vttSrc, setVttSrc] = useState("");
@@ -21,11 +23,11 @@ function App() {
     
     hls.loadSource('http://localhost:3000/closeCaptionsMedia/silence.m3u8');
     
-    hls.attachMedia(videoRef.current);
+    hls.attachMedia(audioRef.current);
     hls.on(Hls.Events.MANIFEST_PARSED, function() {
-      videoRef.current.play();
+      audioRef.current.play();
     });
-  }, [videoRef])
+  }, [audioRef])
 
   useEffect(() => {
     async function load() {
@@ -80,6 +82,38 @@ function App() {
     cue.text = "my name is anna";
   };
 
+  const toggleCaptionPosition = () => {
+    const cue = trackRef.current.track.cues[0];
+
+    if(cue.line === 'auto') cue.line = -1;
+    
+    if(cue.line === 0) cue.line = -1;
+    else cue.line = 0;
+  };
+
+  const changeSize = (ratio) => {
+    const video = videoRef.current.getBoundingClientRect();
+
+    switch (ratio) {
+      case "16:9":
+        audioRef.current.style.width = `${video.width * 0.6}px`;
+        audioRef.current.style.height = `calc(${audioRef.current.style.width}  * 9/16)`;
+        break;
+        
+        case "9:16":
+          audioRef.current.style.height = `${video.height * 0.6}px`;
+        audioRef.current.style.width = `calc(${audioRef.current.style.height} * 9/16)`;
+        break;
+
+      default:
+        audioRef.current.style.height = `${video.height}px`;
+        audioRef.current.style.width = `${video.width}px`;
+        break;
+    }
+
+    audioRef.current.style.margin = `calc((${video.height}px - ${audioRef.current.style.height}) / 2) calc((${video.width}px - ${audioRef.current.style.width}) / 2)`
+  };
+
   const onCueChange = () => {
     const activeCues = trackRef.current.track.activeCues;
     setActiveCue(activeCues[0]?.text || "");
@@ -107,15 +141,15 @@ function App() {
       new CustomVTTCue({ ...options, id: prevState.length + 1 }),
     ]);
   };
-
-  return (
+     
+return (
     <main style={{ display: "flex", flexDirection: "column", position: 'relative', }}>
-      <video width={900}>
+      <video width={900} ref={videoRef}>
         <source src="https://wsc-sports.video/dyvh"></source>
       </video>
 
       <div style={{position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
-        <video muted id="video" width={300} height={300} ref={videoRef}>
+        <video muted id="video" ref={audioRef} style={{width: 900, height: 506.25, border: '2px solid red'}}>
           <track
             default
             kind="captions"
@@ -139,6 +173,14 @@ function App() {
       <button onClick={updateCaption}>
         Update Caption (update text from 0 to 2 seconds)
       </button>
+
+      <button onClick={toggleCaptionPosition}>
+        Toggle Caption Position (text from 0 to 2 seconds)
+      </button>
+
+      <button onClick={() => changeSize("16:9")}>16:9</button>
+      <button onClick={() => changeSize("9:16")}>9:16</button>
+      <button onClick={() => changeSize('')}>None</button>
 
       <div>
         <p>Current text: {activeCue}</p>
