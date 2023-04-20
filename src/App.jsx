@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CuesList } from "./components/CuesList/CuesList";
 import { WebVTTParser, WebVTTSerializer } from "webvtt-parser";
 import { AddCueForm } from "./components/AddCueForm/AddCueForm";
 import { CustomVTTCue } from "./utils/CustomVTTCue";
+import Hls from "hls.js";
 
 //https://brenopolanski.github.io/html5-video-webvtt-example/MIB2-subtitles-pt-BR.vtt
 const vttSerializer = new WebVTTSerializer();
@@ -15,6 +16,17 @@ function App() {
   const [cues, setCues] = useState([]);
   const [vttSrc, setVttSrc] = useState("");
 
+  const initializeHls = useCallback(() => {
+    var hls = new Hls();
+    
+    hls.loadSource('http://localhost:3000/closeCaptionsMedia/silence.m3u8');
+    
+    hls.attachMedia(videoRef.current);
+    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+      videoRef.current.play();
+    });
+  }, [videoRef])
+
   useEffect(() => {
     async function load() {
       const vttTree = vttParser.parse(
@@ -26,7 +38,9 @@ function App() {
     }
 
     load();
-  }, []);
+
+    initializeHls();
+  }, [initializeHls]);
 
   useEffect(() => {
     const { track } = trackRef.current;
@@ -95,20 +109,24 @@ function App() {
   };
 
   return (
-    <main style={{ display: "flex", flexDirection: "column" }}>
-      <video muted id="video" controls width={900} ref={videoRef}>
-        <source src="https://wsc-sports.video/k3y9" type="video/mp4" />
-
-        <track
-          default
-          kind="subtitles"
-          // src="subtitles.vtt"
-          src={vttSrc}
-          srcLang="en"
-          label="Subtitles"
-          ref={trackRef}
-        />
+    <main style={{ display: "flex", flexDirection: "column", position: 'relative', }}>
+      <video width={900}>
+        <source src="https://wsc-sports.video/dyvh"></source>
       </video>
+
+      <div style={{position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
+        <video muted id="video" width={300} height={300} ref={videoRef}>
+          <track
+            default
+            kind="captions"
+            // src="subtitles.vtt"
+            src={vttSrc}
+            srcLang="en"
+            label="captions"
+            ref={trackRef}
+          />
+        </video>
+      </div>
 
       <button onClick={addCaption}>
         Add Caption (add text from 8 to 12 seconds)
