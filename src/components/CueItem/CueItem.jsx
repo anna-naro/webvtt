@@ -14,9 +14,9 @@ export const CueItem = ({ cue, removeCue, updateCueText }) => {
     setText(e.target.value);
   };
 
-  const onKeyDown = (e) => {
-    if (e.key === "Enter") onSave();
-  };
+  // const onKeyDown = (e) => {
+  //   if (e.key === "Enter") onSave();
+  // };
 
   const onSave = () => {
     updateCueText(cue.id, text);
@@ -29,10 +29,10 @@ export const CueItem = ({ cue, removeCue, updateCueText }) => {
         <div>{cue.id}</div>|<div>{formatVttTime(cue.startTime)}</div>|
         <div>{formatVttTime(cue.endTime)}</div>|
         {isEditing ? (
-          <input
+          <textarea
             value={text}
             onChange={onChange}
-            onKeyDown={onKeyDown}
+            // onKeyDown={onKeyDown}
             className={styles.input}
           />
         ) : (
@@ -40,7 +40,7 @@ export const CueItem = ({ cue, removeCue, updateCueText }) => {
         )}
       </div>
 
-      <div>
+      {/* <div>
         {isEditing ? (
           <button key="save" onClick={onSave}>
             Save
@@ -51,7 +51,7 @@ export const CueItem = ({ cue, removeCue, updateCueText }) => {
           </button>
         )}
         <button onClick={removeCue(cue.id)}>Delete</button>
-      </div>
+      </div> */}
     </div>
   );
 };
