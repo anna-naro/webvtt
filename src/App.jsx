@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CuesList } from "./components/CuesList/CuesList";
-import { WebVTTParser, WebVTTSerializer } from "webvtt-parser";
-import { AddCueForm } from "./components/AddCueForm/AddCueForm";
-import { CustomVTTCue } from "./utils/CustomVTTCue";
 import Hls from "hls.js";
+import { stringifyVtt } from "./utils/stringify/stringifyVtt";
 
 //https://brenopolanski.github.io/html5-video-webvtt-example/MIB2-subtitles-pt-BR.vtt
-const vttSerializer = new WebVTTSerializer();
-const vttParser = new WebVTTParser();
 
 function App() {
   const trackRef = useRef({});
@@ -16,7 +12,7 @@ function App() {
 
   const [activeCue, setActiveCue] = useState("");
   const [cues, setCues] = useState([]);
-  const [vttSrc, setVttSrc] = useState("");
+  const [vttString, setVttString] = useState("");
 
   const initializeHls = useCallback(() => {
     var hls = new Hls();
@@ -30,24 +26,15 @@ function App() {
   }, [audioRef]);
 
   useEffect(() => {
-    async function load() {
-      const vttTree = vttParser.parse(
-        await fetch("subtitles.vtt").then((res) => res.text()),
-        "metadata"
-      );
-
-      console.log("vttTree.cues", vttTree.cues);
-
-      setCues(vttTree.cues);
-    }
-
-    load();
-
     initializeHls();
   }, [initializeHls]);
 
   useEffect(() => {
     const { track } = trackRef.current;
+
+    trackRef.current.onload = () => {
+      setCues([...track.cues]);
+    };
 
     track.addEventListener("cuechange", onCueChange);
 
@@ -56,57 +43,31 @@ function App() {
     };
   }, [trackRef]);
 
-  useEffect(() => {
-    if (!cues.length) return;
-
-    console.log(cues);
-
-    const blob = new Blob([vttSerializer.serialize(cues)], {
-      type: "text/plain",
-    });
-    const trackSrc = URL.createObjectURL(blob);
-
-    setVttSrc(trackSrc);
-  }, [cues]);
+  const updateCuesState = () => {
+    setCues([...trackRef.current.track.cues]);
+  };
 
   const addCaption = () => {
-    setCues((prevCues) => {
-      const newCustomCue = new CustomVTTCue({
-        id: prevCues.length + 1,
-        startTime: 8,
-        endTime: 12,
-        text: "this is a test",
-      });
-      const newCue = new VTTCue(
-        newCustomCue.startTime,
-        newCustomCue.endTime,
-        newCustomCue.text
-      );
+    const cue = new VTTCue(8, 12, "this is a test");
+    trackRef.current.track.addCue(cue);
 
-      newCue.id = newCustomCue.id;
-      trackRef.current.track.addCue(newCue);
-
-      return [...prevCues, newCustomCue];
-    });
+    updateCuesState();
   };
 
   const deleteCaption = () => {
-    const removedCue = trackRef.current.track.cues[1];
-    trackRef.current.track.removeCue(removedCue);
-    setCues((prevState) => prevState.filter((cue) => cue.id !== removedCue.id));
+    const cue = trackRef.current.track.cues[1];
+    trackRef.current.track.removeCue(cue);
+
+    updateCuesState();
   };
 
   const updateCaption = () => {
     const newText = "my name is anna";
 
     const cue = trackRef.current.track.cues[0];
-    cue.text = newText;
+    cue.text = "my name is anna";
 
-    setCues((prevCues) => {
-      prevCues[0].text = newText;
-
-      return [...prevCues];
-    });
+    updateCuesState();
   };
 
   const toggleCaptionPosition = () => {
@@ -146,27 +107,11 @@ function App() {
     setActiveCue(activeCues[0]?.text || "");
   };
 
-  const removeCue = (id) => () => {
-    setCues((prevState) => prevState.filter((cue) => cue.id !== id));
-  };
+  const stringifyCues = () => {
+    const string = stringifyVtt(cues);
 
-  const updateCueText = (id, newText) => {
-    setCues((prevState) => {
-      const index = prevState.findIndex((cue) => cue.id === id);
-
-      const newState = [...prevState];
-      newState[index].text = newText;
-      newState[index].tree.children[0].value = newText;
-
-      return newState;
-    });
-  };
-
-  const addCue = (options) => {
-    setCues((prevState) => [
-      ...prevState,
-      new CustomVTTCue({ ...options, id: prevState.length + 1 }),
-    ]);
+    setVttString(string);
+    console.log(string);
   };
 
   return (
@@ -187,8 +132,7 @@ function App() {
           <track
             default
             kind="captions"
-            // src="subtitles.vtt"
-            src={vttSrc}
+            src="subtitles.vtt"
             srcLang="en"
             label="captions"
             ref={trackRef}
@@ -216,16 +160,20 @@ function App() {
       <button onClick={() => changeSize("9:16")}>9:16</button>
       <button onClick={() => changeSize("")}>None</button>
 
+      <button onClick={stringifyCues}>vtt to string</button>
+
       <div>
         <p>Current text: {activeCue}</p>
       </div>
 
-      <AddCueForm addCue={addCue} />
+      <pre style={{}}>{vttString}</pre>
+
+      {/* <AddCueForm addCue={addCue} /> */}
       <CuesList
         cues={cues}
         track={trackRef.current.track}
-        removeCue={removeCue}
-        updateCueText={updateCueText}
+        // removeCue={removeCue}
+        // updateCueText={updateCueText}
       />
     </main>
   );
