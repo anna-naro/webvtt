@@ -33,7 +33,7 @@ function App() {
     const { track } = trackRef.current;
 
     trackRef.current.onload = () => {
-      setCues([...track.cues]);
+      if(track.cues) setCues([...track.cues]);
     };
 
     track.addEventListener("cuechange", onCueChange);
@@ -47,25 +47,29 @@ function App() {
     setCues([...trackRef.current.track.cues]);
   };
 
-  const addCaption = () => {
-    const cue = new VTTCue(8, 12, "this is a test");
+  const addCaption = (cueDetails, shouldUpdateCuesState = true) => {
+    const {startTime, endTime, text, id} = cueDetails;
+
+    const cue = new VTTCue(startTime, endTime, text);
+    if(id) cue.id = id;
+
     trackRef.current.track.addCue(cue);
 
-    updateCuesState();
+    if(shouldUpdateCuesState) updateCuesState();
   };
 
-  const deleteCaption = () => {
-    const cue = trackRef.current.track.cues[1];
-    trackRef.current.track.removeCue(cue);
+  const deleteCaption = (removedCue, shouldUpdateCuesState = true) => {
+    trackRef.current.track.removeCue(removedCue);
 
-    updateCuesState();
+    if(shouldUpdateCuesState) updateCuesState();
   };
 
   const updateCaption = () => {
-    const newText = "my name is anna";
-
     const cue = trackRef.current.track.cues[0];
     cue.text = "my name is anna";
+
+    deleteCaption(cue, false);
+    addCaption(cue, false);
 
     updateCuesState();
   };
@@ -140,11 +144,11 @@ function App() {
         </video>
       </div>
 
-      <button onClick={addCaption}>
+      <button onClick={() => addCaption({startTime: 8, endTime: 12,text: "this is a test"})}>
         Add Caption (add text from 8 to 12 seconds)
       </button>
 
-      <button onClick={deleteCaption}>
+      <button onClick={() => deleteCaption(trackRef.current.track.cues[1])}>
         Delete Caption (delete text from 2 to 5 seconds)
       </button>
 
