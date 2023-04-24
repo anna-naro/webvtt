@@ -65,22 +65,27 @@ function App() {
   };
 
   const updateCaption = () => {
-    const cue = trackRef.current.track.cues[0];
-    cue.text = "my name is anna";
 
-    deleteCaption(cue, false);
-    addCaption(cue, false);
+    [...trackRef.current.track.cues].forEach((cue, index) => {
+      const modifiedCue = trackRef.current.track.cues.getCueById(cue.id);
+
+      deleteCaption(modifiedCue, false);
+      modifiedCue.text = `my name is anna ${index}`;
+      addCaption(modifiedCue, false);
+    })
 
     updateCuesState();
   };
 
   const toggleCaptionPosition = () => {
-    const cue = trackRef.current.track.cues[0];
+    [...trackRef.current.track.cues].forEach(cue => {
+      if (cue.line === "auto") cue.line = -1;
 
-    if (cue.line === "auto") cue.line = -1;
+      if (cue.line === 0) cue.line = -1;
+      else cue.line = 0;
+    })
 
-    if (cue.line === 0) cue.line = -1;
-    else cue.line = 0;
+    updateCuesState()
   };
 
   const changeSize = (ratio) => {
@@ -119,52 +124,55 @@ function App() {
   };
 
   return (
-    <main
-      style={{ display: "flex", flexDirection: "column", position: "relative" }}
-    >
-      <video width={900} ref={videoRef}>
-        <source src="https://wsc-sports.video/dyvh"></source>
-      </video>
+    <main>
 
-      <div style={{ position: "absolute", top: 0, left: 0, zIndex: 1 }}>
-        <video
-          muted
-          id="video"
-          ref={audioRef}
-          style={{ width: 900, height: 506.25, border: "2px solid red" }}
-        >
-          <track
-            default
-            kind="captions"
-            src="subtitles.vtt"
-            srcLang="en"
-            label="captions"
-            ref={trackRef}
-          />
+      <div style={{ display: "flex", position: "relative" }}>
+          <video width={900} ref={videoRef} autoPlay={true}>
+          <source src="https://wsc-sports.video/dyvh"></source>
         </video>
+
+        <div style={{ position: "absolute", top: 0, left: 0, zIndex: 1 }}>
+          <video
+            muted
+            id="video"
+            ref={audioRef}
+            style={{ width: 900, height: 506.25, border: "2px solid red" }}
+          >
+            <track
+              default
+              kind="captions"
+              src="subtitles.vtt"
+              srcLang="en"
+              label="captions"
+              ref={trackRef}
+            />
+          </video>
+        </div>
+
+        <div style={{width: '300px', display: 'flex', flexDirection: 'column', marginLeft: '50px' }}>
+          <button onClick={() => addCaption({id: Math.random(), startTime: 8, endTime: 12,text: "this is a test"})}>
+            Add Caption (add text from 8 to 12 seconds)
+          </button>
+
+          <button onClick={() => deleteCaption(trackRef.current.track.cues.getCueById(cues[0].id))}>
+            Delete Caption (delete text from 2 to 5 seconds)
+          </button>
+
+          <button onClick={updateCaption} style={{marginBottom: '10px'}}>
+            Update Caption (update text from 0 to 2 seconds)
+          </button>
+
+          <button onClick={toggleCaptionPosition} style={{marginBottom: '10px'}}>
+            Toggle Caption Position (text from 0 to 2 seconds)
+          </button>
+
+          <button onClick={() => changeSize("16:9")} style={{marginBottom: '10px'}}>16:9</button>
+          <button onClick={() => changeSize("9:16")} style={{marginBottom: '10px'}}>9:16</button>
+          <button onClick={() => changeSize("")} style={{marginBottom: '10px'}}>None</button>
+
+          <button onClick={stringifyCues} style={{marginBottom: '10px'}}>vtt to string</button>
+        </div>
       </div>
-
-      <button onClick={() => addCaption({startTime: 8, endTime: 12,text: "this is a test"})}>
-        Add Caption (add text from 8 to 12 seconds)
-      </button>
-
-      <button onClick={() => deleteCaption(trackRef.current.track.cues[1])}>
-        Delete Caption (delete text from 2 to 5 seconds)
-      </button>
-
-      <button onClick={updateCaption}>
-        Update Caption (update text from 0 to 2 seconds)
-      </button>
-
-      <button onClick={toggleCaptionPosition}>
-        Toggle Caption Position (text from 0 to 2 seconds)
-      </button>
-
-      <button onClick={() => changeSize("16:9")}>16:9</button>
-      <button onClick={() => changeSize("9:16")}>9:16</button>
-      <button onClick={() => changeSize("")}>None</button>
-
-      <button onClick={stringifyCues}>vtt to string</button>
 
       <div>
         <p>Current text: {activeCue}</p>
