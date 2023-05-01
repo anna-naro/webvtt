@@ -13,6 +13,7 @@ function App() {
   const [activeCue, setActiveCue] = useState("");
   const [cues, setCues] = useState([]);
   const [vttString, setVttString] = useState("");
+  const [stylesCue, setStylesCue] = useState({});
 
   const initializeHls = useCallback(() => {
     var hls = new Hls();
@@ -64,13 +65,19 @@ function App() {
     if(shouldUpdateCuesState) updateCuesState();
   };
 
-  const updateCaption = () => {
+  const updateCaption = (isBgc) => {
 
     [...trackRef.current.track.cues].forEach((cue, index) => {
       const modifiedCue = trackRef.current.track.cues.getCueById(cue.id);
 
       deleteCaption(modifiedCue, false);
-      modifiedCue.text = `my name is anna ${index}`;
+      if(isBgc){
+        if (modifiedCue.text.startsWith("<c")) {
+          const cleanedText = modifiedCue.text.replace(/<c(\.[^>]+)?>/g, "");
+          modifiedCue.text = cleanedText;
+        } else modifiedCue.text = `<c.red>${modifiedCue.text}<c>`;
+      }
+      else modifiedCue.text = `my name is anna ${index}`;
       addCaption(modifiedCue, false);
     })
 
@@ -117,13 +124,53 @@ function App() {
   };
 
   const stringifyCues = () => {
-    const string = stringifyVtt(cues);
+    const string = stringifyVtt(cues, [getGeneralStyle(), getClassesStyle()]);
 
     setVttString(string);
-    console.log(string);
   };
 
+
+
+  const changeCuesColors = () => {
+    setStylesCue(prevState =>{ 
+      return {
+        ...prevState, 
+        "color": prevState.color === "yellow"? "white" : "yellow",
+      }
+    })
+    updateCaption(true)
+  }
+
+  const changeCuesFonts = () => {
+    setStylesCue(prevState =>{ 
+      return {
+        ...prevState, 
+        "font-size": prevState["font-size"] === "1em"? "2em" : "1em",
+        "font-family": prevState["font-family"] === "Montserrat"? "Arial" : "Montserrat"
+      }
+    })
+  }
+
+  const getGeneralStyle = () => {
+      let styleStr = JSON.stringify(stylesCue);
+      styleStr = styleStr.replace(/^{|}$/g, ''); 
+      styleStr = styleStr.replace(/"([\w-]+)":\s*"([^"]+)"/g, '$1: $2');
+      styleStr = styleStr.replace(/,/g, ';\n');
+      styleStr = '::cue {\n' + styleStr + '\n}';
+      return styleStr
+  }
+
+  const getClassesStyle = () => {
+      let styleStr = '::cue(.red){\nbackground-color: red;\n}';
+      return styleStr
+  }
+
   return (
+  <>
+  <style>
+    {getGeneralStyle()}
+    {getClassesStyle()}
+  </style>
     <main>
 
       <div style={{ display: "flex", position: "relative" }}>
@@ -171,6 +218,9 @@ function App() {
           <button onClick={() => changeSize("")} style={{marginBottom: '10px'}}>None</button>
 
           <button onClick={stringifyCues} style={{marginBottom: '10px'}}>vtt to string</button>
+
+          <button onClick={changeCuesColors} style={{marginBottom: '10px'}}>Change color</button>
+          <button onClick={changeCuesFonts} style={{marginBottom: '10px'}}>Change font</button>
         </div>
       </div>
 
@@ -188,6 +238,7 @@ function App() {
         // updateCueText={updateCueText}
       />
     </main>
+    </>
   );
 }
 
